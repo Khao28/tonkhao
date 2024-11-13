@@ -1,0 +1,27 @@
+backend/
+├── config/
+│   ├── auth.js            # การตั้งค่าเกี่ยวกับการยืนยันตัวตน
+│   └── db.js              # การตั้งค่าการเชื่อมต่อฐานข้อมูล
+├── controllers/           # ตัวควบคุมที่จัดการกับ logic ของ API
+│   ├── approverController.js
+│   ├── assetController.js
+│   ├── authController.js
+│   └── borrowController.js
+├── middlewares/           # ฟังก์ชัน middleware เช่น การตรวจสอบโทเคน
+│   └── authMiddleware.js
+├── models/                # ตัวโมเดลที่เชื่อมโยงกับฐานข้อมูล
+│   ├── Asset.js
+│   ├── BorrowRequest.js
+│   └── User.js
+├── routes/                # เส้นทางของ API ที่เชื่อมโยงกับ controller
+│   ├── approverRoutes.js
+│   ├── assetRoutes.js
+│   ├── authRoutes.js
+│   └── borrowRoutes.js
+├── utils/                 # ฟังก์ชันที่ช่วยในการทำงานบางอย่าง เช่น การจัดการโทเคน
+│   └── tokenUtils.js
+├── .env                   # ตัวแปรแวดล้อมสำหรับการตั้งค่า
+├── asset_borrowing_system.sql  # ไฟล์สำหรับสร้างฐานข้อมูล
+├── package-lock.json       # บันทึกเวอร์ชันของแพ็คเกจที่ใช้
+├── package.json            # ข้อมูลโปรเจกต์และแพ็คเกจที่ติดตั้ง
+└── server.js               # ไฟล์หลักของเซิร์ฟเวอร์
