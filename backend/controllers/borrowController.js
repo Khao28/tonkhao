@@ -1,108 +1,94 @@
-const BorrowRequest = require('../models/BorrowRequest');;
+const BorrowRequest = require('../models/BorrowRequest');
 const moment = require('moment');
 const db = require('../config/db');
 
-// Create borrow request
+// ฟังก์ชันสร้างคำขอยืม
 exports.createRequest = (req, res) => {
-    
     const { asset_id, user_id, return_date } = req.body;
     const request_date = moment().format('YYYY-MM-DD');
     const borrow_date = request_date;
 
-    // Check if all required fields are provided
     if (!asset_id || !user_id || !return_date) {
-        return res.status(400).json({ error: 'Missing required fields' });
+        return res.status(400).json({ error: 'กรุณากรอกข้อมูลให้ครบถ้วน' });
     }
 
-    // Query to check if the asset exists
     db.query('SELECT * FROM assets WHERE id = ?', [asset_id], (err, results) => {
         if (err) {
-            return res.status(500).json({ error: 'Failed to retrieve asset information', details: err });
+            return res.status(500).json({ error: 'ไม่สามารถดึงข้อมูลทรัพยากรได้', details: err });
         }
 
         const asset = results[0];
         if (!asset) {
-            return res.status(404).json({ error: 'Asset not found' });
+            return res.status(404).json({ error: 'ไม่พบทรัพยากรที่ต้องการ' });
         }
 
-        // Check the asset's status
         if (asset.status === 'disabled' || asset.status === 'borrowed') {
-            return res.status(400).json({ error: 'Cannot create borrow request for a disabled or borrowed asset' });
+            return res.status(400).json({ error: 'ไม่สามารถสร้างคำขอยืมสำหรับทรัพยากรที่ถูกปิดใช้งานหรือกำลังถูกยืม' });
         }
 
-        // Create the borrow request
         const query = 'INSERT INTO borrow_requests (asset_id, user_id, request_date, borrow_date, return_date, status) VALUES (?, ?, ?, ?, ?, ?)';
         db.query(query, [asset_id, user_id, request_date, borrow_date, return_date, 'pending'], (err, result) => {
             if (err) {
-                return res.status(500).json({ error: 'Failed to create borrow request', details: err });
+                return res.status(500).json({ error: 'ไม่สามารถสร้างคำขอยืมได้', details: err });
             }
 
-            res.status(201).json({ message: 'Borrow request created successfully' });
+            res.status(201).json({ message: 'สร้างคำขอยืมสำเร็จ' });
         });
     });
 };
 
-
-
+// ฟังก์ชันอัปเดตสถานะคำขอยืม
 exports.updateRequestStatus = (req, res) => {
     const { id, status } = req.params;
-    const approverId = req.user.id; // ใช้ ID ของผู้ที่อนุมัติหรือปฏิเสธจาก token หรือ session
+    const approverId = req.user.id;
 
     const validStatuses = ['pending', 'approved', 'rejected'];
     const normalizedStatus = status.toLowerCase();
 
     if (!validStatuses.includes(normalizedStatus)) {
-        return res.status(400).json({ error: 'Invalid status' });
+        return res.status(400).json({ error: 'สถานะไม่ถูกต้อง' });
     }
 
-    // อัปเดตสถานะใน borrow_requests พร้อมกับบันทึก approver_id
     const query = 'UPDATE borrow_requests SET status = ?, approve_by = ? WHERE id = ?';
     db.query(query, [normalizedStatus, approverId, id], (err, result) => {
         if (err) {
-            return res.status(500).json({ error: 'Failed to update borrow request status', details: err });
+            return res.status(500).json({ error: 'ไม่สามารถอัปเดตสถานะได้', details: err });
         }
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'No borrow request found to update' });
+            return res.status(404).json({ error: 'ไม่พบคำขอยืมเพื่ออัปเดต' });
         }
 
-        // ค้นหาคำขอยืมที่อัปเดตแล้ว
         const getRequestQuery = 'SELECT * FROM borrow_requests WHERE id = ?';
         db.query(getRequestQuery, [id], (err, requestResult) => {
             if (err) {
-                return res.status(500).json({ error: 'Failed to retrieve borrow request', details: err });
+                return res.status(500).json({ error: 'ไม่สามารถดึงข้อมูลคำขอยืมได้', details: err });
             }
 
             if (requestResult.length === 0) {
-                return res.status(404).json({ error: 'No borrow request found' });
+                return res.status(404).json({ error: 'ไม่พบคำขอยืม' });
             }
 
             const borrowRequest = requestResult[0];
             
-            // ถ้าสถานะคือ approved หรือ rejected อัปเดตสถานะใน asset
             if (normalizedStatus === 'approved' || normalizedStatus === 'rejected') {
                 const newAssetStatus = normalizedStatus === 'approved' ? 'borrowed' : 'available';
 
-                // อัปเดตสถานะใน asset
                 const updateAssetQuery = 'UPDATE assets SET status = ? WHERE id = ?';
                 db.query(updateAssetQuery, [newAssetStatus, borrowRequest.asset_id], (err) => {
                     if (err) {
-                        return res.status(500).json({ error: 'Failed to update asset status' });
+                        return res.status(500).json({ error: 'ไม่สามารถอัปเดตสถานะทรัพยากรได้' });
                     }
-                    res.json({ message: 'Borrow request status updated and asset status changed accordingly' });
+                    res.json({ message: 'อัปเดตสถานะคำขอยืมและสถานะทรัพยากรสำเร็จ' });
                 });
             } else {
-                res.json({ message: 'Borrow request status updated successfully' });
+                res.json({ message: 'อัปเดตสถานะคำขอยืมสำเร็จ' });
             }
         });
     });
 };
 
-
-
-
-
-// Get all borrow requests with "pending" status
+// ฟังก์ชันดึงข้อมูลคำขอยืมทั้งหมดที่มีสถานะรอการอนุมัติ
 exports.getAllRequests = (req, res) => {
     const query = `
         SELECT br.id, br.status, a.name as asset_name, u.username as user_name
@@ -114,21 +100,18 @@ exports.getAllRequests = (req, res) => {
 
     db.query(query, (err, results) => {
         if (err) {
-            return res.status(500).json({ error: 'Error fetching all borrow requests', details: err });
+            return res.status(500).json({ error: 'ไม่สามารถดึงข้อมูลคำขอยืมทั้งหมดได้', details: err });
         }
 
         if (results.length === 0) {
-            return res.status(404).json({ error: 'No pending borrow requests found' });
+            return res.status(404).json({ error: 'ไม่พบคำขอยืมที่รอการอนุมัติ' });
         }
 
         res.json({ pendingRequests: results });
     });
 };
 
-
-
-
-// Get borrow history for a user
+// ฟังก์ชันดึงประวัติการยืมของผู้ใช้
 exports.getBorrowHistory = (req, res) => {
     const userId = req.params.id || req.user.id;
 
@@ -136,50 +119,47 @@ exports.getBorrowHistory = (req, res) => {
         SELECT br.id, br.status, a.name AS asset_name, u.username AS approver_name
         FROM borrow_requests br
         JOIN assets a ON br.asset_id = a.id
-        LEFT JOIN users u ON br.approver_id = u.id
+        LEFT JOIN users u ON br.approve_by = u.id
         WHERE br.user_id = ?
     `;
 
     db.query(query, [userId], (err, results) => {
         if (err) {
-            return res.status(500).json({ error: 'Error fetching borrow history', details: err });
+            return res.status(500).json({ error: 'ไม่สามารถดึงประวัติการยืมได้', details: err });
         }
 
         if (results.length === 0) {
-            return res.status(404).json({ error: 'No borrow history found for this user' });
+            return res.status(404).json({ error: 'ไม่พบประวัติการยืมสำหรับผู้ใช้นี้' });
         }
 
         res.json({ borrowHistory: results });
     });
 };
 
-
-// for staff
+// ฟังก์ชันสำหรับเจ้าหน้าที่ในการดึงประวัติการยืมทั้งหมด
 exports.getAllBorrowHistory = (req, res) => {
     const query = `
         SELECT br.id, br.status, a.name AS asset_name, u.username AS user_name, approver.username AS approver_name
         FROM borrow_requests br
         JOIN assets a ON br.asset_id = a.id
         JOIN users u ON br.user_id = u.id
-        LEFT JOIN users approver ON br.approver_id = approver.id
+        LEFT JOIN users approver ON br.approve_by = approver.id
     `;
 
     db.query(query, (err, results) => {
         if (err) {
-            return res.status(500).json({ error: 'Error fetching borrow history for all staff', details: err });
+            return res.status(500).json({ error: 'ไม่สามารถดึงประวัติการยืมสำหรับเจ้าหน้าที่ได้', details: err });
         }
 
         if (results.length === 0) {
-            return res.status(404).json({ error: 'No borrow history found' });
+            return res.status(404).json({ error: 'ไม่พบประวัติการยืม' });
         }
 
         res.json({ borrowHistory: results });
     });
 };
 
-
-
-// Get the history of approvals and rejections for all approvers
+// ฟังก์ชันดึงประวัติการอนุมัติและปฏิเสธจากผู้อนุมัติทั้งหมด
 exports.getAllApproverHistory = (req, res) => {
     const query = `
         SELECT br.id, br.status, a.name AS asset_name, u.username AS user_name, approver.username AS approver_name, approver.id AS approver_id
@@ -192,14 +172,13 @@ exports.getAllApproverHistory = (req, res) => {
 
     db.query(query, (err, results) => {
         if (err) {
-            return res.status(500).json({ error: 'Error fetching approver history', details: err });
+            return res.status(500).json({ error: 'ไม่สามารถดึงประวัติการอนุมัติได้', details: err });
         }
 
         if (results.length === 0) {
-            return res.status(404).json({ error: 'No approver history found' });
+            return res.status(404).json({ error: 'ไม่พบประวัติการอนุมัติ' });
         }
 
         res.json({ approverHistory: results });
     });
 };
-

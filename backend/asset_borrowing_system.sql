@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 13, 2024 at 10:46 PM
+-- Generation Time: Nov 14, 2024 at 10:42 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -41,10 +41,7 @@ CREATE TABLE `assets` (
 INSERT INTO `assets` (`id`, `name`, `status`, `description`) VALUES
 (1, 'aaa', 'available', 'aaa'),
 (2, 'bbb', 'available', 'bbb'),
-(3, 'ccc', 'available', 'ccc'),
-(4, 'Asset Name', 'available', 'Asset Description'),
-(5, 'fff', 'available', 'fff'),
-(6, 'newitem', 'available', 'newitem');
+(3, 'ccc', 'disabled', 'ccc');
 
 -- --------------------------------------------------------
 
@@ -68,13 +65,7 @@ CREATE TABLE `borrow_requests` (
 --
 
 INSERT INTO `borrow_requests` (`id`, `asset_id`, `user_id`, `request_date`, `borrow_date`, `return_date`, `status`, `approve_by`) VALUES
-(1, 1, 1, '2024-11-13', '2024-11-13', '2024-12-01', 'approved', NULL),
-(2, 2, 1, '2024-11-13', '2024-11-13', '2024-12-01', 'rejected', NULL),
-(3, 2, 1, '2024-11-13', '2024-11-13', '2024-12-01', 'approved', NULL),
-(4, 4, 1, '2024-11-14', '2024-11-14', '2024-12-01', 'approved', NULL),
-(5, 4, 1, '2024-11-14', '2024-11-14', '2024-12-01', 'rejected', NULL),
-(6, 5, 1, '2024-11-14', '2024-11-14', '2024-12-01', 'approved', NULL),
-(7, 6, 1, '2024-11-14', '2024-11-14', '2024-12-01', 'approved', 4);
+(1, 2, 1, '2024-11-14', '2024-11-14', '2024-12-01', 'approved', NULL);
 
 -- --------------------------------------------------------
 
@@ -84,20 +75,22 @@ INSERT INTO `borrow_requests` (`id`, `asset_id`, `user_id`, `request_date`, `bor
 
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
-  `username` varchar(50) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `email` varchar(255) DEFAULT NULL,
-  `role` enum('Student','Staff','Lecturer') NOT NULL
+  `username` varchar(60) NOT NULL,
+  `password` varchar(60) NOT NULL,
+  `email` varchar(60) NOT NULL,
+  `role` enum('student','staff','approver') NOT NULL DEFAULT 'student',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `email`, `role`) VALUES
-(1, 'khao', '$2b$10$Bwu9f.YtU65nQAigkiF7he4msRN6p1JTSJU4jsuH8vTufXLpa5bPW', 'student@lamduan.mfu.ac.th', 'Student'),
-(2, 'khao01', '$2b$10$b.nHKpyHAYm8yNnCG6uF4u5d60j3SzEHBdAV8JBiLHW2k6ebPERa6', 'staff@lamduan.mfu.ac.th', 'Staff'),
-(4, 'khao02', '$2b$10$LeBC9M.Fy0C8nIJrLtbUfuv97USwVsFRP5OXnEq0cBrJeMSKJLmEK', 'approver@lamduan.mfu.ac.th', 'Lecturer');
+INSERT INTO `users` (`id`, `username`, `password`, `email`, `role`, `created_at`, `updated_at`) VALUES
+(1, 'aaa', '$2b$10$Wo.rYFbZ4qj5XeQ2m9p3Eui47B/wC7vjv3rXOPeDGXXSE1aFrrYEq', 'student@lamduan.mfu.ac.th', 'student', '2024-11-14 09:26:25', '2024-11-14 09:26:25'),
+(2, 'bbb', '$2b$10$olCzEsNURpziX44q6vaIgehBZ7AilYwrPDG6Zba1yuV03NPwP9rzC', 'staff@lamduan.mfu.ac.th', 'staff', '2024-11-14 09:27:34', '2024-11-14 09:29:17'),
+(3, 'ccc', '$2b$10$Ly0YuABM.TCNRvkAPxTOE.LNTCWdIaHp303HhgMqGN6r0SlIC7o1e', 'Lecturer@lamduan.mfu.ac.th', 'approver', '2024-11-14 09:28:17', '2024-11-14 09:29:21');
 
 --
 -- Indexes for dumped tables
@@ -134,19 +127,19 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `assets`
 --
 ALTER TABLE `assets`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `borrow_requests`
 --
 ALTER TABLE `borrow_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Constraints for dumped tables

@@ -1,0 +1,78 @@
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const db = require('../config/db');
+require('dotenv').config();
+
+// ฟังก์ชันในการสร้าง JWT token
+exports.register = async (req, res) => {
+    const { username, password, email } = req.body;
+
+    // กำหนด role ตามอีเมลจาก .env
+    let role;
+    if (email.endsWith(process.env.ALLOWED_STUDENT_EMAIL_DOMAIN)) {
+        role = 'student';
+    } else if (email.endsWith(process.env.ALLOWED_STAFF_EMAIL_DOMAIN)) {
+        role = 'staff';
+    } else if (email.endsWith(process.env.ALLOWED_APPROVER_EMAIL_DOMAIN)) {
+        role = 'Lecturer';
+    } else {
+        return res.status(400).json({ message: 'Invalid email domain' });
+    }
+
+    try {
+        // เช็คว่า username หรือ email ซ้ำหรือไม่
+        const [existingUser] = await db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email]);
+        if (existingUser.length > 0) {
+            if (existingUser.username === username) {
+                return res.status(409).json({ message: 'Username already exists' });
+            }
+            if (existingUser.email === email) {
+                return res.status(409).json({ message: 'Email already exists' });
+            }
+        }
+
+        const hashedPassword = bcrypt.hashSync(password, 10);
+        const newUser = {
+            username,
+            password: hashedPassword,
+            email,
+            role,  // กำหนด role ที่ได้จากโดเมน
+        };
+
+        await db.query('INSERT INTO users SET ?', newUser);
+        return res.status(201).json({ message: 'Register successfully' });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Register failed' });
+    }
+};
+
+
+// ฟังก์ชันในการเข้าสู่ระบบ (Login)
+exports.login = async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        const [users] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
+        const user = users[0];
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Invalid password' });
+        }
+
+        const token = generateToken(user);
+        return res.status(200).json({
+            message: 'Login successful',
+            token: token,
+            userId: user.id,
+            role: user.role
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};

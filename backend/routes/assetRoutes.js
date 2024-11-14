@@ -1,18 +1,13 @@
+
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../middlewares/authMiddleware'); // นำเข้า middleware สำหรับตรวจสอบ token
-const assetController = require('../controllers/assetController'); // ตรวจสอบการนำเข้าอย่างถูกต้อง
+const { verifyToken } = require('../middlewares/authMiddleware');
+const assetController = require('../controllers/assetController');
 
-// Route สำหรับสร้าง asset
-router.post('/', verifyToken, assetController.createAsset); 
 
-// Route สำหรับดึงข้อมูล asset ทั้งหมด
-router.get('/', verifyToken, assetController.getAllAssets); 
-
-// Route สำหรับอัปเดตสถานะ asset
-router.put('/:id/status', verifyToken, assetController.updateAssetStatus); 
-
-// Route สำหรับคืน asset
-router.put('/return/:assetId', verifyToken, assetController.returnAsset); 
-
+router.post('/create', verifyToken, assetController.createAsset);  
+router.get('/', verifyToken, assetController.getAllAssets);
+router.put('/:id/status', verifyToken, assetController.updateAssetStatus);
+router.get('/:id', verifyToken, assetController.returnAsset);
+router.post('/return/:id',verifyToken, assetController.returnAsset);
 module.exports = router;

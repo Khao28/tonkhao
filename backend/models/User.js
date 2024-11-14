@@ -1,48 +1,49 @@
-// ในโมเดล User
-const db = require('../config/db'); // สมมุติว่าเชื่อมต่อฐานข้อมูลไว้แล้ว
+const db = require('../config/db');
 
-// ค้นหาผู้ใช้ตาม username
-exports.findByUsername = (username) => {
-    return new Promise((resolve, reject) => {
-        const query = 'SELECT * FROM users WHERE username = ?';
-        db.query(query, [username], (err, result) => {
-            if (err) reject(err);
-            resolve(result[0]);  // คืนค่าผู้ใช้แรกที่พบ
+const User = {
+    // ฟังก์ชันที่ค้นหาผู้ใช้ด้วย username
+    findByUsername: (username) => {
+      return new Promise((resolve, reject) => {
+        db.query('SELECT * FROM users WHERE username = ?', [username], (error, results) => {
+          if (error) return reject(error);
+          resolve(results[0]); // คืนค่าผู้ใช้แรก (ถ้ามี)
         });
-    });
+      });
+    },
+    
+    //-------------------------------------------------------------------//
+  
+    // ฟังก์ชันที่ค้นหาผู้ใช้ด้วย ID
+    findById: (id) => {
+      return new Promise((resolve, reject) => {
+        db.query('SELECT * FROM users WHERE id = ?', [id], (error, results) => {
+          if (error) return reject(error);
+          resolve(results[0]); // คืนค่าผู้ใช้แรก (ถ้ามี)
+        });
+      });
+    },
+    //-------------------------------------------------------------------//
+  
+    // ดึงรายการ users ทั้งหมด
+    getAllUsers: () => {
+      return new Promise((resolve, reject) => {
+        db.query('SELECT * FROM users', (error, results) => {
+          if (error) return reject(error);
+          resolve(results); // คืนค่ารายการผู้ใช้ทั้งหมด
+        });
+      });
+    },
+    
+    //-------------------------------------------------------------------//
+    // ฟังก์ชันที่บันทึกผู้ใช้
+    create: (user) => {
+      return new Promise((resolve, reject) => {
+        db.query('INSERT INTO users SET ?', user, (error, results) => {
+          if (error) return reject(error);
+          resolve(results);
+        });
+      });
+    },
 };
 
-// ค้นหาผู้ใช้ตาม email
-exports.findByEmail = (email) => {
-    return new Promise((resolve, reject) => {
-        const query = 'SELECT * FROM users WHERE email = ?';
-        db.query(query, [email], (err, result) => {
-            if (err) reject(err);
-            resolve(result[0]);  // คืนค่าผู้ใช้แรกที่พบ
-        });
-    });
-};
-
-// ฟังก์ชันสร้างผู้ใช้ใหม่
-exports.create = (userData) => {
-    return new Promise((resolve, reject) => {
-        const query = 'INSERT INTO users (username, password, email) VALUES (?, ?, ?)';
-        db.query(query, [userData.username, userData.password, userData.email], (err, result) => {
-            if (err) reject(err);
-            resolve(result);
-        });
-    });
-};
-
-
-
-// ฟังก์ชันดึงข้อมูลผู้ใช้ทั้งหมด
-exports.findAll = () => {
-    return new Promise((resolve, reject) => {
-        const query = 'SELECT * FROM users';
-        db.query(query, (err, result) => {
-            if (err) reject(err);
-            resolve(result);  // คืนค่าผลลัพธ์ทั้งหมด
-        });
-    });
-};
+module.exports = User;

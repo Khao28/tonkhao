@@ -1,91 +1,65 @@
-const db = require('../config/db');
+const db = require('../config/db'); // เชื่อมต่อกับฐานข้อมูล MySQL
 
-const Asset  = {
-    create: (asset, callback) => {
-        if (!asset.name || !asset.status || !asset.description) {
-            console.error("Missing fields:", asset);
-            return callback({ error: 'Missing required fields' });
-        }
-
-        const sql = 'INSERT INTO assets (name, status, description) VALUES (?, ?, ?)';
-        db.query(sql, [asset.name, asset.status, asset.description], (err, result) => {
-            if (err) {
-                console.error("Error during asset creation:", err);
-                return callback({ error: 'Failed to create asset', details: err });
-            }
-            console.log("Asset created successfully:", result);
-            callback(null, { message: 'Asset created' });
-        });
-    },
-
-    findAll: (callback) => {
-        const sql = 'SELECT * FROM assets';
-        db.query(sql, (err, assets) => {
-            if (err) {
-                console.error("Error retrieving assets:", err);
-                return callback({ error: 'Failed to retrieve assets' });
-            }
-            console.log("Assets retrieved:", assets);
-            callback(null, assets);
-        });
-    },
-
-    findById: (id, callback) => {
-        const sql = 'SELECT * FROM assets WHERE id = ?';
-        db.query(sql, [id], (err, asset) => {
-            if (err) {
-                console.error("Error retrieving asset by id:", err);
-                return callback({ error: 'Failed to retrieve asset' });
-            }
-            if (!asset.length) {
-                console.log("No asset found with id:", id);
-                return callback({ error: 'Asset not found' });
-            }
-            console.log("Asset retrieved:", asset);
-            callback(null, asset[0]);
-        });
-    },
-
-    updateStatus: (id, status, callback) => {
-        if (!id || !status) {
-            return callback({ error: 'Missing asset id or status' });
-        }
-
-        // ตรวจสอบสถานะหากจะเป็น 'disabled' ให้ตรวจสอบการยืม
-        if (status === 'disabled') {
-            const sql = 'SELECT * FROM borrow_requests WHERE asset_id = ? AND status = "pending"';
-            db.query(sql, [id], (err, borrowRequests) => {
-                if (err) {
-                    console.error("Error checking borrow requests:", err);
-                    return callback({ error: 'Failed to check borrow requests' });
-                }
-                if (borrowRequests.length > 0) {
-                    console.log("Cannot disable asset with active borrow requests:", borrowRequests);
-                    return callback({ error: 'Asset cannot be disabled because it has active borrow requests' });
-                }
-
-                const updateSql = 'UPDATE assets SET status = ? WHERE id = ?';
-                db.query(updateSql, [status, id], (err, result) => {
-                    if (err) {
-                        console.error("Error updating asset status:", err);
-                        return callback({ error: 'Failed to update asset status' });
-                    }
-                    console.log("Asset status updated:", result);
-                    callback(null, { message: 'Asset status updated to disabled' });
-                });
-            });
-        } else {
-            const updateSql = 'UPDATE assets SET status = ? WHERE id = ?';
-            db.query(updateSql, [status, id], (err, result) => {
-                if (err) {
-                    console.error("Error updating asset status:", err);
-                    return callback({ error: 'Failed to update asset status' });
-                }
-                console.log("Asset status updated:", result);
-                callback(null, { message: 'Asset status updated' });
-            });
-        }
+// ฟังก์ชันสำหรับเพิ่ม Asset ใหม่
+const createAsset = async (assetData) => {
+    try {
+        const { name, status, description } = assetData;
+        const query = 'INSERT INTO assets (name, status, description) VALUES (?, ?, ?)';
+        const [result] = await db.execute(query, [name, status, description]);
+        return result;
+    } catch (error) {
+        throw new Error('Error creating asset: ' + error.message);
     }
 };
 
-module.exports = Asset;
+// ฟังก์ชันสำหรับดึงข้อมูล Asset ทั้งหมด
+const getAllAssets = async () => {
+    try {
+        const query = 'SELECT * FROM assets';
+        const [assets] = await db.execute(query);
+        return assets;
+    } catch (error) {
+        throw new Error('Error fetching assets: ' + error.message);
+    }
+};
+
+// ฟังก์ชันสำหรับอัปเดตสถานะของ Asset
+const updateAssetStatus = async (assetId, newStatus) => {
+    try {
+        const query = 'UPDATE assets SET status = ? WHERE id = ?';
+        const [result] = await db.execute(query, [newStatus, assetId]);
+        return result;
+    } catch (error) {
+        throw new Error('Error updating asset status: ' + error.message);
+    }
+};
+
+// ฟังก์ชันสำหรับดึงข้อมูล Asset โดยใช้ ID
+const returnAsset = async (assetId) => {
+    try {
+        const query = 'SELECT * FROM assets WHERE id = ?';
+        const [asset] = await db.execute(query, [assetId]);
+        return asset[0]; // ส่งคืนแค่ 1 record
+    } catch (error) {
+        throw new Error('Error fetching asset by ID: ' + error.message);
+    }
+};
+
+// ฟังก์ชันสำหรับเช็คสถานะของ Borrow Request
+const checkBorrowRequestStatus = async (borrowRequestId) => {
+    try {
+        const query = 'SELECT * FROM borrow_requests WHERE id = ?';
+        const [borrowRequest] = await db.execute(query, [borrowRequestId]);
+        return borrowRequest[0]; // ส่งคืนแค่ 1 record
+    } catch (error) {
+        throw new Error('Error fetching borrow request status: ' + error.message);
+    }
+};
+
+module.exports = {
+    createAsset,
+    getAllAssets,
+    updateAssetStatus,
+    returnAsset,
+    checkBorrowRequestStatus
+};
