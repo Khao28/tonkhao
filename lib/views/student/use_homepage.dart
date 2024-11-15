@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:the_book_coner/ProfileScreen.dart';
-import 'package:the_book_coner/len_dashboard.dart';
-import 'package:the_book_coner/len_history.dart';
-import 'package:the_book_coner/len_request.dart';
-import 'package:the_book_coner/use_history.dart';
-import 'package:the_book_coner/use_status.dart';
 
+import '../../widgets/ProfileScreen.dart';
+import 'use_history.dart';
+import 'use_status.dart';
 void main() {
   runApp(UseHomepage());
 }

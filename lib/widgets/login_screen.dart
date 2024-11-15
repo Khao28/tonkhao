@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:Tonkhao/use_homepage.dart';
+import '../services/auth_service.dart';
 import '../views/auth/signup1.dart';
 import '../views/auth/forgot_password.dart';
+import '../views/student/use_homepage.dart';
 import 'homescreen.dart';// Import HomeScreen
 import '../views/staff/sta_homepage.dart'; // Import StaffHomePage
 import '../views/approver/len_homepage.dart'; // Import LenderHomePage
@@ -15,43 +16,81 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
 
-  void _login() {
-    final String email = _emailController.text.trim();
+  Future<void> _login() async {
+    final String username = _usernameController.text.trim();
     final String password = _passwordController.text.trim();
 
-    if (email == 'user' && password == '1111') {
+    final result = await _authService.login(username, password);
+    
+    String role = result?['role'];
+    if (result != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login Successful!')),
       );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => UseHomepage()),
-      );
-    } else if (email == 'staff' && password == '2222') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login Successful!')),
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => StaHomepage()),
-      );
-    } else if (email == 'lender' && password == '3333') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login Successful!')),
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LenHomepage()),
-      );
+
+      // Check user role and navigate to the appropriate homepage
+      String role = result['role'];
+      if (role == 'student') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => UseHomepage()),
+        );
+      } else if (role == 'staff') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => StaHomepage()),
+        );
+      } else if (role == 'approver') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LenHomepage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unknown role!')),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid email or password!')),
+        const SnackBar(content: Text('Invalid username or password!')),
       );
     }
   }
+
+  //   if (username == 'user' && password == '1111') {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Login Successful!')),
+  //     );
+  //     Navigator.pushReplacement(
+  //       context,
+  //       MaterialPageRoute(builder: (context) => UseHomepage()),
+  //     );
+  //   } else if (username == 'staff' && password == '2222') {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Login Successful!')),
+  //     );
+  //     Navigator.pushReplacement(
+  //       context,
+  //       MaterialPageRoute(builder: (context) => StaHomepage()),
+  //     );
+  //   } else if (username == 'lender' && password == '3333') {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Login Successful!')),
+  //     );
+  //     Navigator.pushReplacement(
+  //       context,
+  //       MaterialPageRoute(builder: (context) => LenHomepage()),
+  //     );
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Invalid username or password!')),
+  //     );
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -73,10 +112,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               TextField(
-                controller: _emailController,
+                controller: _usernameController,
                 decoration: const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email),
+                  labelText: 'username',
+                  prefixIcon: Icon(Icons.person),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(30.0)),
                   ),
