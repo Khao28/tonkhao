@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:the_book_coner/ProfileScreen.dart';
-import 'package:the_book_coner/sta_dashboard.dart';
-import 'package:the_book_coner/sta_history.dart';
-import 'package:the_book_coner/sta_return.dart';
+
 import 'dart:io';
+import '../../widgets/ProfileScreen.dart';
 import '../../widgets/custom_bottom_navigation_bar.dart';
+import 'sta_dashboard.dart';
+import 'sta_history.dart';
+import 'sta_return.dart';
 
 void main() {
   runApp(StaHomepage());

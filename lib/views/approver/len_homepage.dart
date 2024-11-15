@@ -4,6 +4,11 @@ import 'package:tonkhao/views/approver/len_homepage.dart';
 import 'package:tonkhao/views/approver/len_homepage.dart';
 import 'package:tonkhao/lenhome.dart';
 
+import '../../widgets/ProfileScreen.dart';
+import 'len_dashboard.dart';
+import 'len_history.dart';
+import 'len_request.dart';
+
 void main() {
   runApp(LenHomepage());
 }
